@@ -1,0 +1,96 @@
+body {
+    background-color: #333333;
+}
+h1 {
+    color: #ffffff;
+    text-align: center;
+    font-family: Arial;
+    padding: 20px;
+    border-style: solid;
+    border-color: #67a6ff;
+    border-radius: 20px;
+}
+h2 {
+    color: #ffffff;
+    text-align: center;
+    font-family: Arial;
+    padding: 15px;
+    border-style: solid;
+    border-color: #67a6ff;
+    border-radius: 20px;
+}
+h3 {
+    color: #ffffff;
+    text-align: center;
+    font-family: Arial;
+    padding: 10px;
+    border-style: solid;
+    border-color: #67a6ff;
+    border-radius: 20px;
+}
+h4 {
+    color: #ffffff;
+    text-align: center;
+    font-family: Arial;
+    font-weight: bold;
+    padding: 5px;
+    border-style: solid;
+    border-color: #67ffdc;
+    border-radius: 20px;
+}
+p {
+    color: #ffffff;
+    text-align: center;
+    font-family: Arial;
+    padding: 3px;
+    border-style: dashed;
+    border-color: #67a6ff;
+    border-radius: 100px;
+}
+button {
+    color: #ffffff;
+    text-align: center;
+    font-family: Arial;
+    padding: 10px;
+    background-color: #333333;
+    border-style: solid;
+    border-color: #67a6ff;
+    border-radius: 20px;
+    transition: 1s;
+}
+button:hover {
+    border-color: #ff5500;
+}
+hr {
+    background-color: #67a6ff;
+    border-color: #67a6ff;
+    padding: 2px;
+    border-radius: 100px;
+    transition: 0.5s;
+}
+hr:hover {
+    background-color: #ff5500;
+    border-color: #ff5500;
+}
+select {
+    color: #ffffff;
+    font-family: Arial;
+    padding: 10px;
+    background-color: #333333;
+    border-style: solid;
+    border-color: #67a6ff;
+}
+input[type=text] {
+    color: #ffffff;
+    font-family: Arial;
+    padding: 10px;
+    background-color: #333333;
+    border-style: solid;
+    border-color: rgb(103, 166, 255);
+    border-radius: 20px;
+}
+.important {
+    border-style: solid;
+    border-color: rgb(255, 85, 0);
+    border-radius: 20px;
+}

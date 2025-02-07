@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- META Section -->
+        <title>Migraine Tracker</title>
+        <link rel="stylesheet" href="main.css">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    </head>
+    <body>
+        <!-- Landing Page -->
+        <h1>Migraine Tracker</h1>
+        <div>
+            <button onclick="showTab('Input')">Input</button>
+            <button onclick="showTab('Patterns')">Patterns / Trends</button>
+        </div>
+        <hr>
+        <!-- Input -->
+        <div id="Input" class="tab-content">
+            <h2>Input</h2>
+            <hr>
+            <div>
+                <input id="HOS" type="text" placeholder="Hours of Sleep...">
+                <input id="Weather" type="text" placeholder="Weather...">
+                <input id="Breakfast" type="text" placeholder="Breakfast...">
+                <input id="Lunch" type="text" placeholder="Lunch...">
+                <input id="Dinner" type="text" placeholder="Dinner...">
+                <input id="Snacks" type="text" placeholder="Snacks...">
+                <input id="Drinks" type="text" placeholder="Drinks...">
+                <input id="PEA" type="text" placeholder="Physical Activity...">
+                <select id="Migraine"> 
+                    <option value="">Migraine? Y/N</option>
+                    <option value="YES">YES</option>
+                    <option value="NO">NO</option>
+                </select>
+            </div>
+            <hr>
+            <button onclick="submitInput()">Submit Migraine Data</button>
+        </div>
+        <!-- Patterns -->
+        <div id="Patterns" class="tab-content" style="display:none;">
+            <h2>Patterns / Trends</h2>
+        </div>
+        <!-- Scripting Section -->
+        <script src="oofs_utils.js"></script>
+        <script>
+            //////////////////
+            // Landing Page //
+            //////////////////
+            function showTab(tabId) {
+                const tabs = document.querySelectorAll('.tab-content');
+                tabs.forEach(tab => {
+                    tab.style.display = 'none';
+                });
+
+                const selectedTab = document.getElementById(tabId);
+                selectedTab.style.display = 'block';
+            }
+            showTab("Input");
+            ///////////
+            // INPUT //
+            ///////////
+            // submit all info to the google sheet
+            async function submitInput() {
+                // get the info
+                const data = {
+                    Date: _date.getFormattedDMY("", new Date()),
+                    HOS: document.getElementById("HOS").value,
+                    Weather: document.getElementById("Weather").value,
+                    Breakfast: document.getElementById("Breakfast").value,
+                    Lunch: document.getElementById("Lunch").value,
+                    Dinner: document.getElementById("Dinner").value,
+                    Snacks: document.getElementById("Snacks").value,
+                    Drinks: document.getElementById("Drinks").value,
+                    PEA: document.getElementById("PEA").value,
+                    Migraine: document.getElementById("Migraine").value,
+                };
+                // communication with the Google Apps Script
+                try {
+                    // send data to GAS
+                    const response = await fetch('https://script.google.com/macros/s/AKfycbwUxiLFb45ABiO1GvrUYIjLK1veuYo6tvDGJ5VkshGgdfaV3GWfhwyUiSNRPZHlVZHK/exec', {
+                        method: 'POST',
+                        body: JSON.stringify(data),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        mode:"no-cors"
+                    });
+                    // did data get sent correctly - cors error, removed to fix
+                    /* const result = await response.json();
+                    if (result.status === "success") {
+                        alert("Form submitted successfully!");
+                    } else {
+                        alert("There was an error submitting the form.");
+                    } */
+                   alert("Information Submitted!");
+                } 
+                // big error
+                catch (error) {
+                    console.error("Error:", error);
+                    alert("Something went wrong!");
+                }
+            };
+            // fetch data from google sheets
+            async function fetchMigraineData() {
+                const script = document.createElement('script');
+                const callbackName = 'displayPatterns';
+                // Append script tag with JSONP URL
+                script.src = 'https://script.google.com/macros/s/AKfycbwUxiLFb45ABiO1GvrUYIjLK1veuYo6tvDGJ5VkshGgdfaV3GWfhwyUiSNRPZHlVZHK/exec?callback=' + callbackName;
+                document.body.appendChild(script);
+            }
+            // patterns
+            function displayPatterns(data) {
+                console.log("Received Data:", data);
+                // migraine and non-migraine occurrences by weather
+                const weatherCounts = {};
+                data.forEach(entry => {
+                    const weather = entry.Weather || "Unknown";
+                    if (!weatherCounts[weather]) {
+                        weatherCounts[weather] = { migraine: 0, noMigraine: 0 };
+                    }
+                    if (entry.Migraine === "YES") {
+                        weatherCounts[weather].migraine += 1;
+                    } else if (entry.Migraine === "NO") {
+                        weatherCounts[weather].noMigraine += 1;
+                    }
+                });
+                const weatherLabels = Object.keys(weatherCounts);
+                const migraineValues = weatherLabels.map(weather => weatherCounts[weather].migraine);
+                const noMigraineValues = weatherLabels.map(weather => weatherCounts[weather].noMigraine);
+                // clear previous canvas if exists
+                const weatherChartContainer = document.getElementById('weatherMigraineChart');
+                if (weatherChartContainer) weatherChartContainer.remove();
+                // create new canvas
+                const weatherCanvas = document.createElement('canvas');
+                weatherCanvas.id = 'weatherMigraineChart';
+                weatherCanvas.width = 400;
+                weatherCanvas.height = 200;
+                document.getElementById('Patterns').appendChild(weatherCanvas);
+                // chart.js for chart
+                new Chart(weatherCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: weatherLabels,
+                        datasets: [
+                            {
+                                label: 'Migraine Occurrences',
+                                data: migraineValues,
+                                backgroundColor: 'rgba(255, 85, 0, 0.6)',
+                                borderColor: 'rgba(255, 85, 0, 1)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'No Migraine Occurrences',
+                                data: noMigraineValues,
+                                backgroundColor: 'rgba(103, 166, 255, 0.6)',
+                                borderColor: 'rgba(103, 166, 255, 1)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    color: "#FFFFFF",
+                                    text: 'Weather Conditions'
+                                },
+                                ticks: {
+                                    color: "#C8C8C8"
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    color: "#FFFFFF",
+                                    text: 'Count'
+                                },
+                                ticks: {
+                                    color: "#C8C8C8"
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Migraine vs No Migraine in Relation to Weather Conditions',
+                                color: "#FFFFFF"
+                            },
+                            legend: { labels: { color: "#C8C8C8" } }
+                        }
+                    }
+                });
+                // hours of sleep vs. migraine status (NO BINNING FOR ACCURACY)
+                const sleepData = data.map(entry => {
+                    // get hours of sleep (handle missing data / invalid data [ i store them weird ])
+                    const hoursOfSleep = entry["Hours of Sleep"] ? parseFloat(entry["Hours of Sleep"].replace(/[^\d.-]/g, '')) : 0;
+                    // if its invalid, we make it 0
+                    return {
+                        hoursOfSleep: isNaN(hoursOfSleep) ? 0 : hoursOfSleep,
+                        migraineStatus: entry.Migraine === "YES" ? 1 : 0
+                    };
+                });
+                // get avg hours of sleep
+                const totalHours = sleepData.reduce((sum, entry) => sum + entry.hoursOfSleep, 0);
+                const averageHours = totalHours / sleepData.length;
+                // clear previous canvas
+                const sleepChartContainer = document.getElementById('sleepMigraineChart');
+                if (sleepChartContainer) sleepChartContainer.remove();
+                // create new canvas
+                const sleepCanvas = document.createElement('canvas');
+                sleepCanvas.id = 'sleepMigraineChart';
+                sleepCanvas.width = 400;
+                sleepCanvas.height = 200;
+                document.getElementById('Patterns').appendChild(sleepCanvas);
+                // get unique values for the x-axis
+                const uniqueHours = [...new Set(sleepData.map(entry => entry.hoursOfSleep))].sort((a, b) => a - b);
+                // make arrays to plot migraines and non-migraines
+                const migraineCounts = uniqueHours.map(hour => sleepData.filter(entry => entry.hoursOfSleep === hour && entry.migraineStatus === 1).length);
+                const noMigraineCounts = uniqueHours.map(hour => sleepData.filter(entry => entry.hoursOfSleep === hour && entry.migraineStatus === 0).length);
+                // make histogram (chart.js)
+                new Chart(sleepCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: uniqueHours,
+                        datasets: [
+                            {
+                                label: 'Migraine Occurrences',
+                                data: migraineCounts,
+                                backgroundColor: 'rgba(255, 85, 0, 0.6)',
+                                borderColor: 'rgba(255, 85, 0, 1)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'No Migraine Occurrences',
+                                data: noMigraineCounts,
+                                backgroundColor: 'rgba(103, 166, 255, 0.6)',
+                                borderColor: 'rgba(103, 166, 255, 1)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    color: "#FFFFFF",
+                                    text: 'Hours of Sleep'
+                                },
+                                ticks: {
+                                    color: "#C8C8C8"
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    color: "#FFFFFF",
+                                    text: 'Count'
+                                },
+                                ticks: {
+                                    color: "#C8C8C8"
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Distribution of Migraine vs No Migraine by Hours of Sleep',
+                                color: "#FFFFFF"
+                            },
+                            legend: { labels: { color: "#C8C8C8" } }
+                        }
+                    }
+                });
+                let avg_hours = document.createElement("p");
+                avg_hours.className = "important";
+                avg_hours.textContent = "Average Hours Slept: ~" + _date.getHrAndMinFromDecimal(averageHours.toFixed(3));
+                document.getElementById("Patterns").appendChild(avg_hours);
+                // amount of migraines vs amount of no migraines
+                const migraineCount = data.filter(entry => entry.Migraine === "YES").length;
+                const noMigraineCount = data.filter(entry => entry.Migraine === "NO").length;
+                // clear previous canvas
+                const migraineComparisonChartContainer = document.getElementById('migraineComparisonChart');
+                if (migraineComparisonChartContainer) migraineComparisonChartContainer.remove();
+                // make new canvas
+                const migraineComparisonCanvas = document.createElement('canvas');
+                migraineComparisonCanvas.id = 'migraineComparisonChart';
+                migraineComparisonCanvas.width = 400;
+                migraineComparisonCanvas.height = 200;
+                document.getElementById('Patterns').appendChild(migraineComparisonCanvas);
+                // chart.js pie chart
+                new Chart(migraineComparisonCanvas, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Migraine', 'No Migraine'],
+                        datasets: [{
+                            data: [migraineCount, noMigraineCount],
+                            backgroundColor: ['rgba(255, 85, 0, 0.6)', 'rgba(103, 166, 255, 0.6)'],
+                            borderColor: ['rgba(255, 85, 0, 1)', 'rgba(103, 166, 255, 1)'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Migraine vs No Migraine',
+                                color: "#FFFFFF"
+                            },
+                            legend: {
+                                position: 'top',
+                                labels: { color: "#C8C8C8" }
+                            }
+                        }
+                    }
+                });
+            }
+            // get data from google sheets when i click the Patterns button
+            document.querySelector("button[onclick=\"showTab('Patterns')\"]")
+                .addEventListener("click", fetchMigraineData);
+
+        </script>
+    </body>
+</html>
